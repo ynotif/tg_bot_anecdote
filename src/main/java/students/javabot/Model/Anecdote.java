@@ -2,6 +2,8 @@ package students.javabot.Model;
 
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.sql.Timestamp;
 import java.util.Date;
 
 @AllArgsConstructor
@@ -27,4 +29,18 @@ public class Anecdote {
 
     @Column(name = "date_of_update")
     private Date dateOfUpdate;
+
+    @Column(name = "date_of_register")
+    private Timestamp registeredAt;
+
+    @Override
+    public String toString() {
+        return "Anecdote{" +
+                "id=" + id +
+                ", text='" + text + '\'' +
+                ", dateOfCreation=" + dateOfCreation +
+                ", dateOfUpdate=" + dateOfUpdate +
+                ", registeredAt=" + registeredAt +
+                '}';
+    }
 }
