@@ -12,6 +12,9 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import students.javabot.Config.AnecdoteController;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -40,6 +43,7 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
             "Type /updateanecdote to update any anecdote\n\n" +
             "Type /deleteanecdote to delete any anecdote";
 
+    //Меню
     public AnecdoteServiceImpl(AnecdoteController anecdoteController){
         this.anecdoteController = anecdoteController;
         List<BotCommand> listOfCommands = new ArrayList<>();
@@ -115,18 +119,42 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
 
     }
 
+
     private void startCommandReceived(long chatId, String name){
         String answer = EmojiParser.parseToUnicode("Hi, " + name + ", nice to meet you!" + " :wave:");
         log.info("Replied to user " + name);
         sendMessage(chatId, answer);
     }
 
+
+
     private void sendMessage(long chatId, String textToSend){
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(String.valueOf(chatId));
         sendMessage.setText(textToSend);
 
+        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
 
+        List<KeyboardRow> keyboardRows = new ArrayList<>();
+
+        KeyboardRow row = new KeyboardRow();
+
+        row.add("get all anecdotes");
+        row.add("get random anecdote");
+
+        keyboardRows.add(row);
+
+        row = new KeyboardRow();
+
+        row.add("register anecdote");
+        row.add("check my anecdote");
+        row.add("delete my anecdote");
+
+        keyboardRows.add(row);
+
+        keyboardMarkup.setKeyboard(keyboardRows);
+
+        sendMessage.setReplyMarkup(keyboardMarkup);
 
         try {
             execute(sendMessage);
