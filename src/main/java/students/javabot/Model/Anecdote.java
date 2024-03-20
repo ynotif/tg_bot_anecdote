@@ -31,7 +31,7 @@ public class Anecdote {
     private Date dateOfUpdate;
 
     @Column(name = "date_of_register")
-    private Timestamp registeredAt;
+    private String registeredAt;
 
     @Override
     public String toString() {

@@ -1,18 +1,17 @@
 package students.javabot.Service;
 
 import com.vdurmont.emoji.EmojiParser;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -22,9 +21,7 @@ import students.javabot.Model.Anecdote;
 import students.javabot.Repository.AnecdoteRepository;
 
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 @Slf4j
 @Component
@@ -34,6 +31,8 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
     @Autowired
     private AnecdoteRepository anecdoteRepository;
     private final AnecdoteController anecdoteController;
+
+    private final  Map<Long, Boolean> isWaitingForAnecdote = new HashMap<>();
 
     static final String HELP_TEXT = "This bot is created to anecdotes\n\n" +
             "You can execute commands from the main menu on the left or by typing command:\n\n"+
@@ -45,6 +44,7 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
 
     //Меню
     public AnecdoteServiceImpl(AnecdoteController anecdoteController){
+        isWaitingForAnecdote.put(0L, false);
         this.anecdoteController = anecdoteController;
         List<BotCommand> listOfCommands = new ArrayList<>();
         listOfCommands.add(new BotCommand("/start", "get a welcome message"));
@@ -88,37 +88,60 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
                    break;
 
                case "/createanecdote":
-
                    sendMessage(chatId, "Send text your anecdote");
-                   
-                   registerAnecdote(update.getMessage());
-
+                   isWaitingForAnecdote.put(chatId, true);
                    break;
+
                default:
-                   sendMessage(chatId, "Sorry, command was no recognized");
+                   // Проверяем, ожидает ли бот текст анекдота после команды /createanecdote
+                   if (isWaitingForAnecdote.getOrDefault(chatId, true)) {
+                       // Сохраняем текст анекдота в базу данных
+                       registerAnecdote(update.getMessage());
+                       sendMessage(chatId, "Your anecdote has been registered!");
+                       // Сбрасываем флаг ожидания текста анекдота
+                       isWaitingForAnecdote.put(chatId, false);
+                   } else {
+                       sendMessage(chatId, "Sorry, command was not recognized");
+                   }
            }
         }
     }
 
+//    private void registerAnecdote(Message message, CallbackQuery callbackQuery) {
+//
+//        if(anecdoteRepository.findById(message.getChatId()).isEmpty()){
+//            Date date = new Date();
+//            var text = message.getText();
+//
+//            Anecdote anecdote = new Anecdote();
+//
+//            anecdote.setDateOfCreation(date);
+//            anecdote.setDateOfUpdate(null);
+//            anecdote.setText(String.valueOf(callbackQuery));
+//            anecdote.setRegisteredAt(new Timestamp(System.currentTimeMillis()));
+//
+//            anecdoteRepository.save(anecdote);
+//            log.info("anecdote saved: " + anecdote);
+//        }
+//
+//    }
     private void registerAnecdote(Message message) {
+        if (anecdoteRepository.findById(message.getChatId()).isEmpty()) {
+            // Получаем текст анекдота из сообщения
+            String anecdoteText = message.getText();
 
-        if(anecdoteRepository.findById(message.getChatId()).isEmpty()){
-            Date date = new Date();
-            var text = message.getText();
-
+            // Создаем объект анекдота и заполняем его данными
             Anecdote anecdote = new Anecdote();
+            anecdote.setDateOfCreation(new Date()); // Устанавливаем текущую дату
+            anecdote.setText(anecdoteText);
+            anecdote.setRegisteredAt(String.valueOf(message.getChat().getFirstName()));
 
-            anecdote.setDateOfCreation(date);
-            anecdote.setDateOfUpdate(null);
-            anecdote.setText(String.valueOf(text));
-            anecdote.setRegisteredAt(new Timestamp(System.currentTimeMillis()));
-
+            // Сохраняем объект анекдота в базу данных
             anecdoteRepository.save(anecdote);
-            log.info("anecdote saved: " + anecdote);
+
+            log.info("Anecdote saved: " + anecdote);
         }
-
     }
-
 
     private void startCommandReceived(long chatId, String name){
         String answer = EmojiParser.parseToUnicode("Hi, " + name + ", nice to meet you!" + " :wave:");
