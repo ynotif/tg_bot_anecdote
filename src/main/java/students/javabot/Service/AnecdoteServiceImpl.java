@@ -34,22 +34,27 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
 
     private final  Map<Long, Boolean> isWaitingForAnecdote = new HashMap<>();
 
+    private final Map<Long, Boolean> sendAnecdote = new HashMap<>();
+
     static final String HELP_TEXT = "This bot is created to anecdotes\n\n" +
             "You can execute commands from the main menu on the left or by typing command:\n\n"+
             "Type /start to see a welcome message\n\n" +
             "Type /anecdotes to see all anecdotes\n\n" +
             "Type /createanecdote to create any anecdote\n\n" +
+            "Type /getanecdote to see one anecdote by id \n\n"+
             "Type /updateanecdote to update any anecdote\n\n" +
             "Type /deleteanecdote to delete any anecdote";
 
     //Меню
     public AnecdoteServiceImpl(AnecdoteController anecdoteController){
         isWaitingForAnecdote.put(0L, false);
+        sendAnecdote.put(0L, false);
         this.anecdoteController = anecdoteController;
         List<BotCommand> listOfCommands = new ArrayList<>();
         listOfCommands.add(new BotCommand("/start", "get a welcome message"));
         listOfCommands.add(new BotCommand("/anecdotes", "get all anecdotes"));
         listOfCommands.add(new BotCommand("/createanecdote", "create your anecdote"));
+        listOfCommands.add(new BotCommand("/getanecdote", "get anecdote by ID"));
         listOfCommands.add(new BotCommand("/updateanecdote", "update anecdote"));
         listOfCommands.add(new BotCommand("/deleteanecdote", "delete this anecdote"));
         listOfCommands.add(new BotCommand("/help", "more info"));
@@ -75,7 +80,6 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
         if (update.hasMessage() && update.getMessage().hasText()){
            String messageText = update.getMessage().getText();
            long chatId = update.getMessage().getChatId();
-
            switch (messageText){
                case "/start":
 
@@ -92,6 +96,11 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
                    isWaitingForAnecdote.put(chatId, true);
                    break;
 
+               case "/getanecdote":
+                   sendMessage(chatId, "Send id this anecdote");
+                   sendAnecdote.put(chatId, true);
+                   break;
+
                default:
                    // Проверяем, ожидает ли бот текст анекдота после команды /createanecdote
                    if (isWaitingForAnecdote.getOrDefault(chatId, true)) {
@@ -100,9 +109,13 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
                        sendMessage(chatId, "Your anecdote has been registered!");
                        // Сбрасываем флаг ожидания текста анекдота
                        isWaitingForAnecdote.put(chatId, false);
+                   } else if (sendAnecdote.getOrDefault(chatId, true)) {
+                       findAnecdoteById(update.getMessage());
+                       sendAnecdote.put(chatId, false);
                    } else {
                        sendMessage(chatId, "Sorry, command was not recognized");
                    }
+
            }
         }
     }
@@ -140,6 +153,20 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
             anecdoteRepository.save(anecdote);
 
             log.info("Anecdote saved: " + anecdote);
+        }
+    }
+
+    private void findAnecdoteById(Message message){
+        Optional<Anecdote> optionalAnecdote = anecdoteRepository.findById(Long.parseLong(message.getText()));
+        if (optionalAnecdote.isPresent()) {
+            Anecdote anecdote = optionalAnecdote.get();
+            String response = "Anecdote ID: " + anecdote.getId() + "\n" +
+                    "Text: " + anecdote.getText();
+            sendMessage(message.getChatId(), response);
+            log.info("Sent anecdote: " + response);
+        } else {
+            sendMessage(message.getChatId(), "Anecdote not found :(");
+            log.warn("Anecdote not found" + message.getText());
         }
     }
 
