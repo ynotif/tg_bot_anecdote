@@ -36,6 +36,8 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
 
     private final Map<Long, Boolean> updateAnecdote = new HashMap<>();
 
+    private final Map<Long, Boolean> deleteAnecdote = new HashMap<>();
+
     static final String HELP_TEXT = "This bot is created to anecdotes\n\n" +
             "You can execute commands from the main menu on the left or by typing command:\n\n"+
             "Type /start to see a welcome message\n\n" +
@@ -50,6 +52,7 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
         isWaitingForAnecdote.clear();
         sendAnecdote.clear();
         updateAnecdote.clear();
+        deleteAnecdote.clear();
     }
     public AnecdoteServiceImpl(AnecdoteController anecdoteController){
         resetFlags();
@@ -61,6 +64,7 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
         listOfCommands.add(new BotCommand("/getanecdote", "get anecdote by ID"));
         listOfCommands.add(new BotCommand("/updateanecdote", "update anecdote"));
         listOfCommands.add(new BotCommand("/deleteanecdote", "delete this anecdote"));
+        listOfCommands.add(new BotCommand("/back", "canceled action"));
         listOfCommands.add(new BotCommand("/help", "more info"));
         try {
             this.execute(new SetMyCommands(listOfCommands, new BotCommandScopeDefault(), null));
@@ -119,7 +123,8 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
 
 
                 case "/deleteanecdote":
-                    deleteAnecdote(update.getMessage());
+                    sendMessage(chatId, "Send the id to delete the anecdote");
+                    deleteAnecdote.put(chatId, true);
                     break;
 
                 default:
@@ -130,10 +135,15 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
                         sendMessage(chatId, "Your anecdote has been registered!");
                         // Сбрасываем флаг ожидания текста анекдота
                         isWaitingForAnecdote.put(chatId, false);
-                    } else if (sendAnecdote.getOrDefault(chatId, false) && !updateAnecdote.getOrDefault(chatId, false)) {
+                    }
+                    //Отправка анекдота
+                    else if (sendAnecdote.getOrDefault(chatId, false) && !updateAnecdote.getOrDefault(chatId, false) && !deleteAnecdote.getOrDefault(chatId, false)) {
                         findAnecdoteById(update.getMessage(), "find");
+                        sendMessage(chatId, "Вызвалась хуета");
                         sendAnecdote.put(chatId, false);
-                    } else if (updateAnecdote.getOrDefault(chatId, false)) {
+                    }
+                    // Изменение анекдота
+                    else if (updateAnecdote.getOrDefault(chatId, false)) {
                         if (sendAnecdote.getOrDefault(chatId, false)){
                             updateAnecdote(update.getMessage());
                             updateAnecdote.put(chatId,false);
@@ -141,6 +151,20 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
                         }
                         else {
                             findAnecdoteById(update.getMessage(), "find to update");
+                            sendAnecdote.put(chatId, true);
+                        }
+                    }
+                    //Удаление анекдота
+                    else if (deleteAnecdote.getOrDefault(chatId, false)) {
+                        if (messageText.equals("Yes") || messageText.equals("yes")){
+                            deleteAnecdote(update.getMessage());
+                            deleteAnecdote.put(chatId, false);
+                            sendAnecdote.put(chatId, false);
+                        }
+                        else if (messageText.equals("No") || messageText.equals("no")) {
+                            sendMessage(chatId, "Send command /back");
+                        } else{
+                            findAnecdoteById(update.getMessage(), "find to delete");
                             sendAnecdote.put(chatId, true);
                         }
                     } else {
@@ -180,7 +204,7 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
         sendMessage(message.getChatId(), response.toString());
     }
 
-    private Long idAnecdoteToUpdate;
+    private Long idAnecdote;
     private void findAnecdoteById(Message message, String findOrUpdate){
         String input = message.getText();
         try {
@@ -192,8 +216,14 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
                     String response = "Anecdote ID: " + anecdote.getId() + "\n" +
                             "Text: " + anecdote.getText() + "\n" + "Send a new text for anecdote";
                     sendMessage(message.getChatId(), response);
-                    idAnecdoteToUpdate = id;
-                    log.info("Sent anecdote: " + response);
+                    idAnecdote = id;
+                }
+                else if (findOrUpdate.equals("find to delete")) {
+                    Anecdote anecdote = optionalAnecdote.get();
+                    String response = "Anecdote ID: " + anecdote.getId() + "\n" +
+                            "Text: " + anecdote.getText() + "\n" + "Are you serious about deleting this anecdote? If yes, write \"Yes\", if not, then \"No\"";
+                    sendMessage(message.getChatId(), response);
+                    idAnecdote = id;
                 }
                 else {
                     Anecdote anecdote = optionalAnecdote.get();
@@ -214,20 +244,21 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
     }
 
     private void updateAnecdote(Message message){
-        Optional<Anecdote> optionalAnecdote = anecdoteRepository.findById(idAnecdoteToUpdate);
+        Optional<Anecdote> optionalAnecdote = anecdoteRepository.findById(idAnecdote);
         Anecdote updateAnecdote = optionalAnecdote.get();
         updateAnecdote.setText(message.getText());
         updateAnecdote.setDateOfUpdate(new Date());
         anecdoteRepository.save(updateAnecdote);
         sendMessage(message.getChatId(), "Anecdote has been changed");
-        log.info("Anecdote has been update: " + anecdoteRepository.findById(idAnecdoteToUpdate));
-        idAnecdoteToUpdate = null;
+        log.info("Anecdote has been update: " + anecdoteRepository.findById(idAnecdote));
+        idAnecdote = null;
     }
 
     private void deleteAnecdote(Message message){
-        Long id = Long.parseLong(message.getText());
-        anecdoteRepository.deleteById(id);
+        log.info("Anecdote has been deleted: " + anecdoteRepository.findById(idAnecdote));
+        anecdoteRepository.deleteById(idAnecdote);
         sendMessage(message.getChatId(), "Anecdote has been deleted");
+        idAnecdote = null;
     }
 
     private void startCommandReceived(long chatId, String name){
