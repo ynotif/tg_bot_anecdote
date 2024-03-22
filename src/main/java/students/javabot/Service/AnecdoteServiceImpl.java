@@ -7,7 +7,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
@@ -20,7 +19,6 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import students.javabot.Model.Anecdote;
 import students.javabot.Repository.AnecdoteRepository;
 
-import java.sql.Timestamp;
 import java.util.*;
 
 @Slf4j
@@ -36,6 +34,8 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
 
     private final Map<Long, Boolean> sendAnecdote = new HashMap<>();
 
+    private final Map<Long, Boolean> updateAnecdote = new HashMap<>();
+
     static final String HELP_TEXT = "This bot is created to anecdotes\n\n" +
             "You can execute commands from the main menu on the left or by typing command:\n\n"+
             "Type /start to see a welcome message\n\n" +
@@ -46,9 +46,13 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
             "Type /deleteanecdote to delete any anecdote";
 
     //Меню
+    private void resetFlags() {
+        isWaitingForAnecdote.clear();
+        sendAnecdote.clear();
+        updateAnecdote.clear();
+    }
     public AnecdoteServiceImpl(AnecdoteController anecdoteController){
-        isWaitingForAnecdote.put(0L, false);
-        sendAnecdote.put(0L, false);
+        resetFlags();
         this.anecdoteController = anecdoteController;
         List<BotCommand> listOfCommands = new ArrayList<>();
         listOfCommands.add(new BotCommand("/start", "get a welcome message"));
@@ -78,66 +82,75 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
         if (update.hasMessage() && update.getMessage().hasText()){
-           String messageText = update.getMessage().getText();
-           long chatId = update.getMessage().getChatId();
-           switch (messageText){
-               case "/start":
+            String messageText = update.getMessage().getText();
+            long chatId = update.getMessage().getChatId();
+            switch (messageText){
+                case "/start":
+                    startCommandReceived(chatId, update.getMessage().getChat().getFirstName());
+                    break;
 
-                   startCommandReceived(chatId, update.getMessage().getChat().getFirstName());
-                   break;
+                case "/back":
 
-               case "/help":
+                    sendMessage(chatId, "The action has been canceled");
+                    break;
 
-                   sendMessage(chatId, HELP_TEXT);
-                   break;
+                case "/help":
+                    sendMessage(chatId, HELP_TEXT);
+                    break;
 
-               case "/createanecdote":
-                   sendMessage(chatId, "Send text your anecdote");
-                   isWaitingForAnecdote.put(chatId, true);
-                   break;
+                case "/anecdotes":
+                    getAllAnecdotes(update.getMessage());
+                    break;
 
-               case "/getanecdote":
-                   sendMessage(chatId, "Send id this anecdote");
-                   sendAnecdote.put(chatId, true);
-                   break;
+                case "/createanecdote":
+                    sendMessage(chatId, "Send text your anecdote");
+                    isWaitingForAnecdote.put(chatId, true);
+                    break;
 
-               default:
-                   // Проверяем, ожидает ли бот текст анекдота после команды /createanecdote
-                   if (isWaitingForAnecdote.getOrDefault(chatId, true)) {
-                       // Сохраняем текст анекдота в базу данных
-                       registerAnecdote(update.getMessage());
-                       sendMessage(chatId, "Your anecdote has been registered!");
-                       // Сбрасываем флаг ожидания текста анекдота
-                       isWaitingForAnecdote.put(chatId, false);
-                   } else if (sendAnecdote.getOrDefault(chatId, true)) {
-                       findAnecdoteById(update.getMessage());
-                       sendAnecdote.put(chatId, false);
-                   } else {
-                       sendMessage(chatId, "Sorry, command was not recognized");
-                   }
+                case "/getanecdote":
+                    sendMessage(chatId, "Send id this anecdote");
+                    sendAnecdote.put(chatId, true);
+                    break;
 
-           }
+                case "/updateanecdote":
+                    sendMessage(chatId, "Send the id to update the anecdote");
+                    updateAnecdote.put(chatId, true);
+                    break;
+
+
+                case "/deleteanecdote":
+                    deleteAnecdote(update.getMessage());
+                    break;
+
+                default:
+                    // Проверяем, ожидает ли бот текст анекдота после команды /createanecdote
+                    if (isWaitingForAnecdote.getOrDefault(chatId, false)) {
+                        // Сохраняем текст анекдота в базу данных
+                        registerAnecdote(update.getMessage());
+                        sendMessage(chatId, "Your anecdote has been registered!");
+                        // Сбрасываем флаг ожидания текста анекдота
+                        isWaitingForAnecdote.put(chatId, false);
+                    } else if (sendAnecdote.getOrDefault(chatId, false) && !updateAnecdote.getOrDefault(chatId, false)) {
+                        findAnecdoteById(update.getMessage(), "find");
+                        sendAnecdote.put(chatId, false);
+                    } else if (updateAnecdote.getOrDefault(chatId, false)) {
+                        if (sendAnecdote.getOrDefault(chatId, false)){
+                            updateAnecdote(update.getMessage());
+                            updateAnecdote.put(chatId,false);
+                            sendAnecdote.put(chatId,false);
+                        }
+                        else {
+                            findAnecdoteById(update.getMessage(), "find to update");
+                            sendAnecdote.put(chatId, true);
+                        }
+                    } else {
+                        sendMessage(chatId, "Sorry, command was not recognized");
+                    }
+
+            }
         }
     }
 
-//    private void registerAnecdote(Message message, CallbackQuery callbackQuery) {
-//
-//        if(anecdoteRepository.findById(message.getChatId()).isEmpty()){
-//            Date date = new Date();
-//            var text = message.getText();
-//
-//            Anecdote anecdote = new Anecdote();
-//
-//            anecdote.setDateOfCreation(date);
-//            anecdote.setDateOfUpdate(null);
-//            anecdote.setText(String.valueOf(callbackQuery));
-//            anecdote.setRegisteredAt(new Timestamp(System.currentTimeMillis()));
-//
-//            anecdoteRepository.save(anecdote);
-//            log.info("anecdote saved: " + anecdote);
-//        }
-//
-//    }
     private void registerAnecdote(Message message) {
         if (anecdoteRepository.findById(message.getChatId()).isEmpty()) {
             // Получаем текст анекдота из сообщения
@@ -153,21 +166,68 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
             anecdoteRepository.save(anecdote);
 
             log.info("Anecdote saved: " + anecdote);
+            isWaitingForAnecdote.put(message.getChatId(), false);
         }
     }
 
-    private void findAnecdoteById(Message message){
-        Optional<Anecdote> optionalAnecdote = anecdoteRepository.findById(Long.parseLong(message.getText()));
-        if (optionalAnecdote.isPresent()) {
-            Anecdote anecdote = optionalAnecdote.get();
-            String response = "Anecdote ID: " + anecdote.getId() + "\n" +
-                    "Text: " + anecdote.getText();
-            sendMessage(message.getChatId(), response);
-            log.info("Sent anecdote: " + response);
-        } else {
-            sendMessage(message.getChatId(), "Anecdote not found :(");
-            log.warn("Anecdote not found" + message.getText());
+    private void getAllAnecdotes(Message message) {
+        List<Anecdote> anecdotes = anecdoteRepository.getAnecdoteBy();
+        StringBuilder response = new StringBuilder("All anecdotes:\n");
+        for (Anecdote anecdote : anecdotes) {
+            response.append("ID: ").append(anecdote.getId()).append("\n")
+                    .append("Text: ").append(anecdote.getText()).append("\n\n");
         }
+        sendMessage(message.getChatId(), response.toString());
+    }
+
+    private Long idAnecdoteToUpdate;
+    private void findAnecdoteById(Message message, String findOrUpdate){
+        String input = message.getText();
+        try {
+            long id = Long.parseLong(input);
+            Optional<Anecdote> optionalAnecdote = anecdoteRepository.findById(id);
+            if (optionalAnecdote.isPresent()) {
+                if (findOrUpdate.equals("find to update")){
+                    Anecdote anecdote = optionalAnecdote.get();
+                    String response = "Anecdote ID: " + anecdote.getId() + "\n" +
+                            "Text: " + anecdote.getText() + "\n" + "Send a new text for anecdote";
+                    sendMessage(message.getChatId(), response);
+                    idAnecdoteToUpdate = id;
+                    log.info("Sent anecdote: " + response);
+                }
+                else {
+                    Anecdote anecdote = optionalAnecdote.get();
+                    String response = "Anecdote ID: " + anecdote.getId() + "\n" +
+                            "Text: " + anecdote.getText();
+                    sendMessage(message.getChatId(), response);
+                    log.info("Sent anecdote: " + response);
+                }
+            } else {
+                sendMessage(message.getChatId(), "Anecdote not found :(");
+                log.warn("Anecdote not found" + input);
+            }
+            sendAnecdote.put(message.getChatId(), false);
+        } catch (NumberFormatException e) {
+            sendMessage(message.getChatId(), "Invalid input. Please enter a valid anecdote ID.");
+            log.error("Invalid input: " + input);
+        }
+    }
+
+    private void updateAnecdote(Message message){
+        Optional<Anecdote> optionalAnecdote = anecdoteRepository.findById(idAnecdoteToUpdate);
+        Anecdote updateAnecdote = optionalAnecdote.get();
+        updateAnecdote.setText(message.getText());
+        updateAnecdote.setDateOfUpdate(new Date());
+        anecdoteRepository.save(updateAnecdote);
+        sendMessage(message.getChatId(), "Anecdote has been changed");
+        log.info("Anecdote has been update: " + anecdoteRepository.findById(idAnecdoteToUpdate));
+        idAnecdoteToUpdate = null;
+    }
+
+    private void deleteAnecdote(Message message){
+        Long id = Long.parseLong(message.getText());
+        anecdoteRepository.deleteById(id);
+        sendMessage(message.getChatId(), "Anecdote has been deleted");
     }
 
     private void startCommandReceived(long chatId, String name){
