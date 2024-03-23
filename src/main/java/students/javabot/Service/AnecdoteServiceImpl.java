@@ -139,7 +139,6 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
                     //Отправка анекдота
                     else if (sendAnecdote.getOrDefault(chatId, false) && !updateAnecdote.getOrDefault(chatId, false) && !deleteAnecdote.getOrDefault(chatId, false)) {
                         findAnecdoteById(update.getMessage(), "find");
-                        sendMessage(chatId, "Вызвалась хуета");
                         sendAnecdote.put(chatId, false);
                     }
                     // Изменение анекдота
