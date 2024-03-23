@@ -274,28 +274,28 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
         sendMessage.setChatId(String.valueOf(chatId));
         sendMessage.setText(textToSend);
 
-        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+        // ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
 
-        List<KeyboardRow> keyboardRows = new ArrayList<>();
+        // List<KeyboardRow> keyboardRows = new ArrayList<>();
 
-        KeyboardRow row = new KeyboardRow();
+        // KeyboardRow row = new KeyboardRow();
 
-        row.add("get all anecdotes");
-        row.add("get random anecdote");
+        // row.add("get all anecdotes");
+        // row.add("get random anecdote");
 
-        keyboardRows.add(row);
+        // keyboardRows.add(row);
 
-        row = new KeyboardRow();
+        // row = new KeyboardRow();
 
-        row.add("register anecdote");
-        row.add("check my anecdote");
-        row.add("delete my anecdote");
+        // row.add("register anecdote");
+        // row.add("check my anecdote");
+        // row.add("delete my anecdote");
 
-        keyboardRows.add(row);
+        // keyboardRows.add(row);
 
-        keyboardMarkup.setKeyboard(keyboardRows);
+        // keyboardMarkup.setKeyboard(keyboardRows);
 
-        sendMessage.setReplyMarkup(keyboardMarkup);
+        // sendMessage.setReplyMarkup(keyboardMarkup);
 
         try {
             execute(sendMessage);
