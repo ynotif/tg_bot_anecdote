@@ -28,8 +28,6 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
 
     @Autowired
     private AnecdoteRepository anecdoteRepository;
-
-
     private final AnecdoteController anecdoteController;
 
     private final  Map<Long, Boolean> isWaitingForAnecdote = new HashMap<>();
@@ -56,7 +54,7 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
         updateAnecdote.clear();
         deleteAnecdote.clear();
     }
-    public AnecdoteServiceImpl(AnecdoteRepository anecdoteRepository, AnecdoteController anecdoteController){
+    public AnecdoteServiceImpl(AnecdoteController anecdoteController){
         resetFlags();
         this.anecdoteController = anecdoteController;
         List<BotCommand> listOfCommands = new ArrayList<>();
@@ -177,13 +175,12 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
     }
 
     private void registerAnecdote(Message message) {
-        // Получаем текст анекдота из сообщения
-        String anecdoteText = message.getText();
-
-        // Создаем объект анекдота и заполняем его данными
-        Anecdote anecdote = new Anecdote();
         if (anecdoteRepository.findById(message.getChatId()).isEmpty()) {
+            // Получаем текст анекдота из сообщения
+            String anecdoteText = message.getText();
 
+            // Создаем объект анекдота и заполняем его данными
+            Anecdote anecdote = new Anecdote();
             anecdote.setDateOfCreation(new Date()); // Устанавливаем текущую дату
             anecdote.setText(anecdoteText);
             anecdote.setRegisteredAt(String.valueOf(message.getChat().getFirstName()));
@@ -193,9 +190,6 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
 
             log.info("Anecdote saved: " + anecdote);
             isWaitingForAnecdote.put(message.getChatId(), false);
-        }
-        else{
-            anecdote.setId(null);
         }
     }
 
@@ -279,28 +273,28 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
         sendMessage.setChatId(String.valueOf(chatId));
         sendMessage.setText(textToSend);
 
-//        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
-//
-//        List<KeyboardRow> keyboardRows = new ArrayList<>();
-//
-//        KeyboardRow row = new KeyboardRow();
-//
-//        row.add("get all anecdotes");
-//        row.add("get random anecdote");
-//
-//        keyboardRows.add(row);
-//
-//        row = new KeyboardRow();
-//
-//        row.add("register anecdote");
-//        row.add("check my anecdote");
-//        row.add("delete my anecdote");
-//
-//        keyboardRows.add(row);
-//
-//        keyboardMarkup.setKeyboard(keyboardRows);
-//
-//        sendMessage.setReplyMarkup(keyboardMarkup);
+        // ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+
+        // List<KeyboardRow> keyboardRows = new ArrayList<>();
+
+        // KeyboardRow row = new KeyboardRow();
+
+        // row.add("get all anecdotes");
+        // row.add("get random anecdote");
+
+        // keyboardRows.add(row);
+
+        // row = new KeyboardRow();
+
+        // row.add("register anecdote");
+        // row.add("check my anecdote");
+        // row.add("delete my anecdote");
+
+        // keyboardRows.add(row);
+
+        // keyboardMarkup.setKeyboard(keyboardRows);
+
+        // sendMessage.setReplyMarkup(keyboardMarkup);
 
         try {
             execute(sendMessage);
