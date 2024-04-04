@@ -45,7 +45,8 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
             "Type /createanecdote to create any anecdote\n\n" +
             "Type /getanecdote to see one anecdote by id \n\n"+
             "Type /updateanecdote to update any anecdote\n\n" +
-            "Type /deleteanecdote to delete any anecdote";
+            "Type /deleteanecdote to delete any anecdote\n\n" +
+            "Type /random to gives out a random anecdote";
 
     //Меню
     private void resetFlags() {
@@ -64,6 +65,7 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
         listOfCommands.add(new BotCommand("/getanecdote", "get anecdote by ID"));
         listOfCommands.add(new BotCommand("/updateanecdote", "update anecdote"));
         listOfCommands.add(new BotCommand("/deleteanecdote", "delete this anecdote"));
+        listOfCommands.add(new BotCommand("/random", "Gives out a random anecdote"));
         listOfCommands.add(new BotCommand("/back", "canceled action"));
         listOfCommands.add(new BotCommand("/help", "more info"));
         try {
@@ -125,6 +127,10 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
                 case "/deleteanecdote":
                     sendMessage(chatId, "Send the id to delete the anecdote");
                     deleteAnecdote.put(chatId, true);
+                    break;
+
+                case "/random":
+                    randomAnecdote(chatId);
                     break;
 
                 default:
@@ -203,6 +209,13 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
         sendMessage(message.getChatId(), response.toString());
     }
 
+    private void randomAnecdote(long chatId){
+        long count = anecdoteRepository.count();
+        long indx = (long) ((Math.random() * count) + 1);
+        Optional<Anecdote> optionalAnecdote = anecdoteRepository.getAnecdoteById(indx);
+        Anecdote anecdote = optionalAnecdote.get();
+        sendMessage(chatId, anecdote.getText());
+    }
     private Long idAnecdote;
     private void findAnecdoteById(Message message, String findOrUpdate){
         String input = message.getText();
