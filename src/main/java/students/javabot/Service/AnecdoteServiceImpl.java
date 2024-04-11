@@ -225,21 +225,21 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
             if (optionalAnecdote.isPresent()) {
                 if (findOrUpdate.equals("find to update")){
                     Anecdote anecdote = optionalAnecdote.get();
-                    String response = "Anecdote ID: " + anecdote.getId() + "\n" +
+                    String response = "Anecdote ID: " + anecdote.getUserId() + "\n" +
                             "Text: " + anecdote.getText() + "\n" + "Send a new text for anecdote";
                     sendMessage(message.getChatId(), response);
                     idAnecdote = id;
                 }
                 else if (findOrUpdate.equals("find to delete")) {
                     Anecdote anecdote = optionalAnecdote.get();
-                    String response = "Anecdote ID: " + anecdote.getId() + "\n" +
+                    String response = "Anecdote ID: " + anecdote.getUserId() + "\n" +
                             "Text: " + anecdote.getText() + "\n" + "Are you serious about deleting this anecdote? If yes, write \"Yes\", if not, then \"No\"";
                     sendMessage(message.getChatId(), response);
                     idAnecdote = id;
                 }
                 else {
                     Anecdote anecdote = optionalAnecdote.get();
-                    String response = "Anecdote ID: " + anecdote.getId() + "\n" +
+                    String response = "Anecdote ID: " + anecdote.getUserId() + "\n" +
                             "Text: " + anecdote.getText();
                     sendMessage(message.getChatId(), response);
                     log.info("Sent anecdote: " + response);

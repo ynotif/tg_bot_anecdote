@@ -22,4 +22,10 @@ public class AnecdoteCalling {
     @SequenceGenerator(name = "anecdote_anecdoteCallingId_seq", sequenceName = "anecdote_anecdoteCallingId_seq", initialValue = 1, allocationSize = 1)
     private long anecdoteCallingId;
 
+    @JoinColumn(name = "userId")
+    @Column(name = "userId")
+    private long userId;
+
+    @Column(name = "dateCalling")
+    private Date dateCalling;
 }
