@@ -1,0 +1,9 @@
+services:
+  postgres:
+    image: 'postgres:latest'
+    environment:
+      - 'POSTGRES_DB=JavaLabsBd'
+      - 'POSTGRES_PASSWORD=artem_myxa'
+      - 'POSTGRES_USER=postgres'
+    ports:
+      - '5432'
