@@ -1,0 +1,79 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1712941419495-1
+      author: whyno (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createSequence:
+            incrementBy: 1
+            sequenceName: anecdote_anecdote_calling_id_seq
+            startValue: 1
+  - changeSet:
+      id: 1712941419495-2
+      author: whyno (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createSequence:
+            incrementBy: 1
+            sequenceName: anecdote_id_seq
+            startValue: 1
+  - changeSet:
+      id: 1712941419495-3
+      author: whyno (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_anecdote
+                  name: anecdote_id
+                  type: BIGINT
+              - column:
+                  name: text
+                  type: VARCHAR(255)
+              - column:
+                  name: date_of_creation
+                  type: DATETIME
+              - column:
+                  name: date_of_update
+                  type: DATETIME
+              - column:
+                  name: date_of_register
+                  type: VARCHAR(255)
+            tableName: anecdote
+  - changeSet:
+      id: 1712941419495-4
+      author: whyno (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_user
+                  name: user_id
+                  type: BIGINT
+              - column:
+                  name: anecdote_id
+                  type: BIGINT
+              - column:
+                  name: date_calling
+                  type: DATETIME
+            tableName: user
+  - changeSet:
+      id: 1712941419495-5
+      author: whyno (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: anecdote_id
+            baseTableName: user
+            constraintName: FK_USER_ON_ANECDOTEID
+            referencedColumnNames: anecdote_id
+            referencedTableName: anecdote
+

@@ -15,10 +15,9 @@ import java.util.Date;
 @Table(name = "anecdote")
 public class Anecdote {
     @Id
-    @Column(name = "userId")
     @GeneratedValue(generator = "anecdote_id_seq", strategy = GenerationType.SEQUENCE)
     @SequenceGenerator(name = "anecdote_id_seq", sequenceName = "anecdote_id_seq", initialValue = 1, allocationSize = 1)
-    private Long userId;
+    private long anecdoteId;
 
 
     @Column(name = "text")
@@ -37,7 +36,7 @@ public class Anecdote {
     @Override
     public String toString() {
         return "Anecdote{" +
-                "id=" + userId +
+                "id=" + anecdoteId +
                 ", text='" + text + '\'' +
                 ", dateOfCreation=" + dateOfCreation +
                 ", dateOfUpdate=" + dateOfUpdate +
