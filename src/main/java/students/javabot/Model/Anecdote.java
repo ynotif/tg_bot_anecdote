@@ -19,7 +19,6 @@ public class Anecdote {
     @SequenceGenerator(name = "anecdote_id_seq", sequenceName = "anecdote_id_seq", initialValue = 1, allocationSize = 1)
     private long anecdoteId;
 
-
     @Column(name = "text")
     private String text;
 
