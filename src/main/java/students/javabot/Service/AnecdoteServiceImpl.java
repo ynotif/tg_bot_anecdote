@@ -26,7 +26,6 @@ import java.util.*;
 @Service
 public class AnecdoteServiceImpl extends TelegramLongPollingBot {
 
-    @Autowired
     private AnecdoteRepository anecdoteRepository;
     private final AnecdoteController anecdoteController;
 
@@ -203,7 +202,7 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
         List<Anecdote> anecdotes = anecdoteRepository.getAnecdoteBy();
         StringBuilder response = new StringBuilder("All anecdotes:\n");
         for (Anecdote anecdote : anecdotes) {
-            response.append("ID: ").append(anecdote.getId()).append("\n")
+            response.append("ID: ").append(anecdote.getAnecdoteId()).append("\n")
                     .append("Text: ").append(anecdote.getText()).append("\n\n");
         }
         sendMessage(message.getChatId(), response.toString());
@@ -225,21 +224,21 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
             if (optionalAnecdote.isPresent()) {
                 if (findOrUpdate.equals("find to update")){
                     Anecdote anecdote = optionalAnecdote.get();
-                    String response = "Anecdote ID: " + anecdote.getId() + "\n" +
+                    String response = "Anecdote ID: " + anecdote.getAnecdoteId() + "\n" +
                             "Text: " + anecdote.getText() + "\n" + "Send a new text for anecdote";
                     sendMessage(message.getChatId(), response);
                     idAnecdote = id;
                 }
                 else if (findOrUpdate.equals("find to delete")) {
                     Anecdote anecdote = optionalAnecdote.get();
-                    String response = "Anecdote ID: " + anecdote.getId() + "\n" +
+                    String response = "Anecdote ID: " + anecdote.getAnecdoteId() + "\n" +
                             "Text: " + anecdote.getText() + "\n" + "Are you serious about deleting this anecdote? If yes, write \"Yes\", if not, then \"No\"";
                     sendMessage(message.getChatId(), response);
                     idAnecdote = id;
                 }
                 else {
                     Anecdote anecdote = optionalAnecdote.get();
-                    String response = "Anecdote ID: " + anecdote.getId() + "\n" +
+                    String response = "Anecdote ID: " + anecdote.getAnecdoteId() + "\n" +
                             "Text: " + anecdote.getText();
                     sendMessage(message.getChatId(), response);
                     log.info("Sent anecdote: " + response);
