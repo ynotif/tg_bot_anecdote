@@ -1,33 +1,34 @@
 package students.javabot.Model;
 
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
-
 import java.util.Date;
 
 @NoArgsConstructor
 @AllArgsConstructor
-@Getter
-@Setter
+@Data
 @Entity(name = "userHistory")
 @Table(name = "userHistory")
 public class UserHistory {
     @Id
     @Column(name = "userHistoryId")
-    @GeneratedValue(generator = "userHistoryId_seq", strategy = GenerationType.SEQUENCE)
-    @SequenceGenerator(name = "userHistoryId_seq", sequenceName = "userHistoryId_seq", initialValue = 1, allocationSize = 1)
-    private long id;
+    @GeneratedValue(generator = "userHistory_id_seq", strategy = GenerationType.SEQUENCE)
+    @SequenceGenerator(name = "userHistory_id_seq", sequenceName = "userHistory_id_seq", initialValue = 1, allocationSize = 1)
+    private Long userHistoryId;
 
-    @JsonIgnore
-    @JoinColumn(name = "anecdoteId")
+    @JoinColumn(name = "userId")
     @ManyToOne
-    private Anecdote anecdote;
+    private User userId;
 
-    @Column(name = "dateCalling")
-    private Date dateCalling;
+    @Column(name = "anecdoteId")
+    private Long anecdoteId;
+
+    @Column(name = "dateOfCalling")
+    private Date dateOfCalling;
+
+    @Column(name = "action")
+    private String action;
+
 }

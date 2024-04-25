@@ -6,4 +6,4 @@ services:
       - 'POSTGRES_PASSWORD=artem_myxa'
       - 'POSTGRES_USER=postgres'
     ports:
-      - '8090'
+      - '5432'

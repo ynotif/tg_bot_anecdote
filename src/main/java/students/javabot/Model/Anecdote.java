@@ -2,8 +2,6 @@ package students.javabot.Model;
 
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.sql.Timestamp;
 import java.util.Date;
 
 @AllArgsConstructor
@@ -15,9 +13,10 @@ import java.util.Date;
 @Table(name = "anecdote")
 public class Anecdote {
     @Id
+    @Column(name = "anecdoteId")
     @GeneratedValue(generator = "anecdote_id_seq", strategy = GenerationType.SEQUENCE)
     @SequenceGenerator(name = "anecdote_id_seq", sequenceName = "anecdote_id_seq", initialValue = 1, allocationSize = 1)
-    private long anecdoteId;
+    private Long anecdoteId;
 
     @Column(name = "text")
     private String text;

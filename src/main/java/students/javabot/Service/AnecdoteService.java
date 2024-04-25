@@ -1,17 +1,18 @@
 package students.javabot.Service;
-import java.util.List;
-import java.util.Optional;
 
 import students.javabot.Model.Anecdote;
+
+import java.util.List;
+import java.util.Optional;
 
 public interface AnecdoteService {
     Anecdote registerAnecdote(Anecdote anecdote);
 
     List<Anecdote> getAllAnecdotes();
 
-    Optional<Anecdote> getAnecdoteById(Long id);
+    Optional<Anecdote> getAnecdoteById(Long anecdoteId);
 
-    Anecdote updateAnecdoteById(Long id, Anecdote anecdote);
+    Anecdote updateAnecdoteById(Long anecdoteId, Anecdote anecdote);
 
-    void deleteAnecdoteById(Long id);
+    void deleteAnecdoteById(Long anecdoteId);
 }

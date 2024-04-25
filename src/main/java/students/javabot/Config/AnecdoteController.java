@@ -17,6 +17,7 @@ public class AnecdoteController {
     @Value("${bot.token}")
     String token;
 
+    private int currentPage = 1;
 }
 
 
