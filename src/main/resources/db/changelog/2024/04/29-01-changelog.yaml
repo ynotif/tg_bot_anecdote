@@ -1,0 +1,112 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1714341890363-1
+      author: whyno (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createSequence:
+            incrementBy: 1
+            sequenceName: anecdote_id_seq
+            startValue: 1
+  - changeSet:
+      id: 1714341890363-2
+      author: whyno (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createSequence:
+            incrementBy: 1
+            sequenceName: user_entity_id_seq
+            startValue: 1
+  - changeSet:
+      id: 1714341890363-3
+      author: whyno (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createSequence:
+            incrementBy: 1
+            sequenceName: user_history_id_seq
+            startValue: 1
+  - changeSet:
+      id: 1714341890363-4
+      author: whyno (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_anecdote
+                  name: anecdote_id
+                  type: BIGINT
+              - column:
+                  name: text
+                  type: VARCHAR(255)
+              - column:
+                  name: date_of_creation
+                  type: DATETIME
+              - column:
+                  name: date_of_update
+                  type: DATETIME
+              - column:
+                  name: date_of_register
+                  type: VARCHAR(255)
+            tableName: anecdote
+  - changeSet:
+      id: 1714341890363-5
+      author: whyno (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_userentity
+                  name: user_id
+                  type: BIGINT
+              - column:
+                  name: user_name
+                  type: VARCHAR(255)
+            tableName: user_entity
+  - changeSet:
+      id: 1714341890363-6
+      author: whyno (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_userhistory
+                  name: user_history_id
+                  type: BIGINT
+              - column:
+                  name: user_id
+                  type: BIGINT
+              - column:
+                  name: anecdote_id
+                  type: BIGINT
+              - column:
+                  name: date_of_calling
+                  type: DATETIME
+              - column:
+                  name: action
+                  type: VARCHAR(255)
+            tableName: user_history
+  - changeSet:
+      id: 1714341890363-7
+      author: whyno (generated)
+      objectQuotingStrategy: QUOTE_ONLY_RESERVED_WORDS
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: user_id
+            baseTableName: user_history
+            constraintName: FK_USERHISTORY_ON_USERID
+            referencedColumnNames: user_id
+            referencedTableName: user_entity
+
