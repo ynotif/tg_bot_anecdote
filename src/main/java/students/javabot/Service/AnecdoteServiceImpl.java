@@ -16,7 +16,7 @@ import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScope
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import students.javabot.Config.AnecdoteController;
+import students.javabot.Config.AnecdoteConfig;
 import students.javabot.Model.Anecdote;
 import students.javabot.Model.UserHistory;
 import students.javabot.Model.User;
@@ -27,7 +27,6 @@ import students.javabot.Repository.UserRepository;
 import java.util.*;
 
 @Slf4j
-@Component
 @Service
 public class AnecdoteServiceImpl extends TelegramLongPollingBot {
 
@@ -37,9 +36,9 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
 
     private final UserRepository userRepository;
 
-    private final AnecdoteController anecdoteController;
+    private final AnecdoteConfig anecdoteConfig;
 
-    private final  Map<Long, Boolean> isWaitingForAnecdote = new HashMap<>();
+    private final Map<Long, Boolean> isWaitingForAnecdote = new HashMap<>();
 
     private final Map<Long, Boolean> sendAnecdote = new HashMap<>();
 
@@ -48,21 +47,21 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
     private final Map<Long, Boolean> deleteAnecdote = new HashMap<>();
 
     static final String HELP_TEXT = "This bot is created to anecdotes\n\n" +
-            "You can execute commands from the main menu on the left or by typing command:\n\n"+
+            "You can execute commands from the main menu on the left or by typing command:\n\n" +
             "Type /start to see a welcome message\n\n" +
             "Type /anecdotes to see all anecdotes\n\n" +
             "Type /createanecdote to create any anecdote\n\n" +
-            "Type /getanecdote to see one anecdote by id \n\n"+
+            "Type /getanecdote to see one anecdote by id \n\n" +
             "Type /updateanecdote to update any anecdote\n\n" +
             "Type /deleteanecdote to delete any anecdote\n\n" +
             "Type /random to gives out a random anecdote";
 
 
-    public AnecdoteServiceImpl(AnecdoteRepository anecdoteRepository, AnecdoteController anecdoteController, UserRepository userRepository, UserHistoryRepository userHistoryRepository) {
+    public AnecdoteServiceImpl(AnecdoteRepository anecdoteRepository, AnecdoteConfig anecdoteConfig, UserRepository userRepository, UserHistoryRepository userHistoryRepository) {
         this.userHistoryRepository = userHistoryRepository;
         this.userRepository = userRepository;
         this.anecdoteRepository = anecdoteRepository;
-        this.anecdoteController = anecdoteController;
+        this.anecdoteConfig = anecdoteConfig;
         resetFlags(); // Включаем обнуление флагов
         initializeCommands(); // Инициализируем команды бота
     }
@@ -97,28 +96,29 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
 
     @Override
     public String getBotUsername() {
-        return anecdoteController.getBotName();
+        return anecdoteConfig.getBotName();
     }
 
     @Override
     public String getBotToken() {
-        return anecdoteController.getToken();
+        return anecdoteConfig.getToken();
     }
 
     int currentPage = 0;
+
     @Override
     public void onUpdateReceived(Update update) {
-        if (update.hasMessage() && update.getMessage().hasText()){
+        if (update.hasMessage() && update.getMessage().hasText()) {
             String messageText = update.getMessage().getText();
             Message message = update.getMessage();
             long chatId = message.getChatId();
-            if (userRepository.findByUserName(update.getMessage().getChat().getUserName()).isEmpty()) {
+            if (userRepository.findByUsername(update.getMessage().getChat().getUserName()).isEmpty()) {
                 // Если пользователя нет, создаем нового и сохраняем его
-                User newUser = new User(); // В тг библиотеке есть User поэтому выдает ошибку если записывать через импорт из модели
-                newUser.setUserName(update.getMessage().getChat().getUserName());
+                User newUser = new User();
+                newUser.setUsername(update.getMessage().getChat().getUserName());
                 userRepository.save(newUser);
             }
-            switch (messageText){
+            switch (messageText) {
                 case "/start":
                     startCommandReceived(chatId, update.getMessage().getChat().getFirstName());
                     break;
@@ -185,33 +185,31 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
                     }
                     // Изменение анекдота
                     else if (updateAnecdote.getOrDefault(chatId, false)) {
-                        if (sendAnecdote.getOrDefault(chatId, false)){
+                        if (sendAnecdote.getOrDefault(chatId, false)) {
                             updateAnecdote(update.getMessage());
-                            updateAnecdote.put(chatId,false);
-                            sendAnecdote.put(chatId,false);
-                        }
-                        else {
+                            updateAnecdote.put(chatId, false);
+                            sendAnecdote.put(chatId, false);
+                        } else {
                             findAnecdoteById(update.getMessage(), "find to update");
                             sendAnecdote.put(chatId, true);
                         }
                     }
                     //Удаление анекдота
                     else if (deleteAnecdote.getOrDefault(chatId, false)) {
-                        if (messageText.equals("Yes") || messageText.equals("yes")){
+                        if (messageText.equals("Yes") || messageText.equals("yes")) {
                             deleteAnecdote(update.getMessage());
                             deleteAnecdote.put(chatId, false);
                             sendAnecdote.put(chatId, false);
-                        }
-                        else if (messageText.equals("No") || messageText.equals("no")) {
+                        } else if (messageText.equals("No") || messageText.equals("no")) {
                             sendMessage(chatId, "Send command /back");
-                        } else{
+                        } else {
                             findAnecdoteById(update.getMessage(), "find to delete");
                             sendAnecdote.put(chatId, true);
                         }
                     } else {
                         sendMessage(chatId, "Sorry, command was not recognized");
                     }
-                }
+            }
         } else if (update.hasCallbackQuery()) {
             // Обработка колбэк-запросов от кнопок...
             processCallbackQuery(update.getCallbackQuery());
@@ -237,7 +235,8 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
         }
     }
 
-    long  lastId = 0;
+    long lastId = 21;
+
     private void recordCreateAnecdote(User user) {
         lastId += 1;
         UserHistory userHistory = new UserHistory();
@@ -246,6 +245,7 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
         userHistory.setDateOfCalling(new Date());
         userHistory.setAnecdoteId(lastId);
         userHistoryRepository.save(userHistory);
+        log.info("Anecdote has been created: " + user.getUsername());
     }
 
     private void recordUpdateAnecdote(User user) {
@@ -266,7 +266,7 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
         userHistoryRepository.save(userHistory);
     }
 
-    private void recordCallingAnecdote(User user){
+    private void recordCallingAnecdote(User user) {
         UserHistory userHistory = new UserHistory();
         userHistory.setUserId(user);
         userHistory.setAction("Calling an anecdote");
@@ -279,7 +279,7 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
         List<UserHistory> userHistories = userHistoryRepository.findAll();
         StringBuilder response = new StringBuilder();
         for (UserHistory userHistory : userHistories) {
-            response.append("UserName: ").append(userHistory.getUserId().getUserName()).append("\n")
+            response.append("UserName: ").append(userHistory.getUserId().getUsername()).append("\n")
                     .append("Anecdote: ").append(userHistory.getAnecdoteId()).append("\n")
                     .append("Action: ").append(userHistory.getAction()).append("\n")
                     .append("Date: ").append(userHistory.getDateOfCalling()).append("\n\n");
@@ -303,12 +303,13 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
             anecdoteRepository.save(anecdote);
             isWaitingForAnecdote.put(message.getChatId(), false);
             sendMessage(message.getChatId(), "Your anecdote has been registered!");
-            recordCreateAnecdote(userRepository.findByUserName(String.valueOf(message.getChat().getUserName())).orElse(null));
+            recordCreateAnecdote(userRepository.findByUsername(String.valueOf(message.getChat().getUserName())).orElse(null));
             log.info("Anecdote saved: " + anecdote);
         }
     }
+    //Вынести метод в отдельный сервис и создать контроллер
 
-    private void getAllAnecdotes(Message message, int start, long chatId) {
+    private void getAllAnecdotes(Message message, int end, long chatId) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(String.valueOf(chatId));
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
@@ -331,7 +332,7 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
         row1.add(pageButton);
 
         // Кнопка "Вперед"
-        if(currentPage * 5L < anecdoteCount - 5) {
+        if (currentPage * 5L <= anecdoteCount - 5) {
             InlineKeyboardButton nextButton = new InlineKeyboardButton();
             nextButton.setText("Вперед -->");
             nextButton.setCallbackData("Next page");
@@ -339,18 +340,18 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
         }
 
         rows.add(row1);
-        StringBuilder response = new StringBuilder("Page anecdotes: " + (currentPage+1) + "\n\n");
+        StringBuilder response = new StringBuilder("Page anecdotes: " + (currentPage + 1) + "\n\n");
         int count = 0;
-        for (int i = start; i <= anecdoteCount + 1; i++){
+        for (int i = (int) anecdoteCount - end + 1; i >= 0; i--) {
             Long indx = (long) i;
             Optional<Anecdote> anecdoteOptional = anecdoteRepository.findById(indx);
-            if (anecdoteOptional.isPresent()){
+            if (anecdoteOptional.isPresent()) {
                 count++;
                 Anecdote anecdote = anecdoteOptional.get();
                 response.append("ID: ").append(indx).append("\n")
                         .append("Text: ").append(anecdote.getText()).append("\n\n");
             }
-            if (count == 5){
+            if (count == 5) {
                 break;
             }
         }
@@ -383,70 +384,73 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
     }
 
 
-    private void randomAnecdote(Long chatId){
+    private void randomAnecdote(Long chatId) {
         long count = anecdoteRepository.count();
-        long indx = (long) (Math.random() * count);
-        if (indx == 0) {
-            indx = 1;
+        long index = (long) (Math.random() * count);
+        if (index == 0) {
+            index = 1;
         }
-        Optional<Anecdote> optionalAnecdote = anecdoteRepository.getAnecdoteById(indx);
+        Optional<Anecdote> optionalAnecdote = anecdoteRepository.getAnecdoteById(index);
         Anecdote anecdote = optionalAnecdote.get();
         sendMessage(chatId, anecdote.getText());
         log.info("Random anecdote: " + anecdote);
     }
 
-    private void popularAnecdotes(Long chatId){
+    private void popularAnecdotes(Long chatId) {
         long count = anecdoteRepository.count();
         List<Long> list = new ArrayList<>();
-        while (list.size() < 5) {
-            long indx = (long) (Math.random() * count) + 1;
-            if (!list.contains(indx)) {
-                Optional<Anecdote> anecdote = anecdoteRepository.getAnecdoteById(indx);
-                if (anecdote.isPresent()) {
-                    list.add(indx);
+        if (count >= 5) {
+            while (list.size() < 5) {
+                long index = (long) (Math.random() * count) + 1;
+                if (!list.contains(index)) {
+                    Optional<Anecdote> anecdote = anecdoteRepository.getAnecdoteById(index);
+                    if (anecdote.isPresent()) {
+                        list.add(index);
+                    }
                 }
             }
-        }
-        StringBuilder response = new StringBuilder("Popular anecdotes:\n");
-        for (Long id : list) {
-            Optional<Anecdote> optionalAnecdote = anecdoteRepository.getAnecdoteById(id);
-            if (optionalAnecdote.isPresent()) {
-                Anecdote anecdote = optionalAnecdote.get();
-                response.append("ID: ").append(anecdote.getAnecdoteId()).append("\n")
-                        .append("Text: ").append(anecdote.getText()).append("\n\n");
+            StringBuilder response = new StringBuilder("Popular anecdotes:\n");
+            for (Long id : list) {
+                Optional<Anecdote> optionalAnecdote = anecdoteRepository.getAnecdoteById(id);
+                if (optionalAnecdote.isPresent()) {
+                    Anecdote anecdote = optionalAnecdote.get();
+                    response.append("ID: ").append(anecdote.getAnecdoteId()).append("\n")
+                            .append("Text: ").append(anecdote.getText()).append("\n\n");
+                }
             }
+            sendMessage(chatId, response.toString());
+            log.info("Popular anecdotes populated" + response);
+        } else {
+            sendMessage(chatId, "Anecdotes count < 5");
         }
-        sendMessage(chatId, response.toString());
-        log.info("Popular anecdotes populated" + response.toString());
     }
 
     private Long idAnecdote;
-    private void findAnecdoteById(Message message, String findOrUpdate){
+
+    private void findAnecdoteById(Message message, String findOrUpdate) {
         String input = message.getText();
         try {
             Long id = Long.parseLong(input);
             idAnecdote = id;
             Optional<Anecdote> optionalAnecdote = anecdoteRepository.findById(id);
             if (optionalAnecdote.isPresent()) {
-                if (findOrUpdate.equals("find to update")){
+                if (findOrUpdate.equals("find to update")) {
                     Anecdote anecdote = optionalAnecdote.get();
                     String response = "Anecdote ID: " + anecdote.getAnecdoteId() + "\n" +
                             "Text: " + anecdote.getText() + "\n" + "Send a new text for anecdote";
                     sendMessage(message.getChatId(), response);
 
-                }
-                else if (findOrUpdate.equals("find to delete")) {
+                } else if (findOrUpdate.equals("find to delete")) {
                     Anecdote anecdote = optionalAnecdote.get();
                     String response = "Anecdote ID: " + anecdote.getAnecdoteId() + "\n" +
                             "Text: " + anecdote.getText() + "\n" + "Are you serious about deleting this anecdote? If yes, write \"Yes\", if not, then \"No\"";
                     sendMessage(message.getChatId(), response);
-                }
-                else {
+                } else {
                     Anecdote anecdote = optionalAnecdote.get();
                     String response = "Anecdote ID: " + anecdote.getAnecdoteId() + "\n" +
                             "Text: " + anecdote.getText();
                     sendMessage(message.getChatId(), response);
-                    recordCallingAnecdote(userRepository.findByUserName(String.valueOf(message.getChat().getUserName())).orElse(null));
+                    recordCallingAnecdote(userRepository.findByUsername(String.valueOf(message.getChat().getUserName())).orElse(null));
                     idAnecdote = null;
                     log.info("Sent anecdote: " + response);
                 }
@@ -462,7 +466,7 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
     }
 
 
-    private void updateAnecdote(Message message){
+    private void updateAnecdote(Message message) {
         Optional<Anecdote> optionalAnecdote = anecdoteRepository.findById(idAnecdote);
         Anecdote updateAnecdote = optionalAnecdote.get();
         updateAnecdote.setText(message.getText());
@@ -470,27 +474,26 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
         anecdoteRepository.save(updateAnecdote);
         sendMessage(message.getChatId(), "Anecdote has been changed");
         log.info("Anecdote has been update: " + anecdoteRepository.findById(idAnecdote));
-        recordUpdateAnecdote(userRepository.findByUserName(String.valueOf(message.getChat().getUserName())).orElse(null));
+        recordUpdateAnecdote(userRepository.findByUsername(String.valueOf(message.getChat().getUserName())).orElse(null));
         idAnecdote = null;
     }
 
-    private void deleteAnecdote(Message message){
+    private void deleteAnecdote(Message message) {
         anecdoteRepository.deleteById(idAnecdote);
         sendMessage(message.getChatId(), "Anecdote has been deleted");
-        recordDeleteAnecdote(userRepository.findByUserName(String.valueOf(message.getChat().getUserName())).orElse(null));
+        recordDeleteAnecdote(userRepository.findByUsername(String.valueOf(message.getChat().getUserName())).orElse(null));
         idAnecdote = null;
         log.info("Anecdote has been deleted: " + anecdoteRepository.findById(idAnecdote));
     }
 
-    private void startCommandReceived(long chatId, String name){
+    private void startCommandReceived(long chatId, String name) {
         String answer = EmojiParser.parseToUnicode("Hi, " + name + ", nice to meet you!" + " :wave:");
         sendMessage(chatId, answer);
         log.info("Replied to user " + name);
     }
 
 
-
-    private void sendMessage(long chatId, String textToSend){
+    private void sendMessage(long chatId, String textToSend) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(String.valueOf(chatId));
         sendMessage.setText(textToSend);
@@ -519,9 +522,8 @@ public class AnecdoteServiceImpl extends TelegramLongPollingBot {
 
         try {
             execute(sendMessage);
-        }
-        catch (TelegramApiException e){
-            log.error("Error occurred"+ e.getMessage());
+        } catch (TelegramApiException e) {
+            log.error("Error occurred" + e.getMessage());
         }
     }
 

@@ -1,16 +1,17 @@
 package students.javabot.Model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
 import java.util.Date;
 
 @NoArgsConstructor
 @AllArgsConstructor
-@Data
+@Setter
+@Getter
 @Entity(name = "userHistory")
 @Table(name = "userHistory")
+@ToString
 public class UserHistory {
     @Id
     @Column(name = "userHistoryId")

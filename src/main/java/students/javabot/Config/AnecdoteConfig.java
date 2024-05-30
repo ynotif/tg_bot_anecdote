@@ -9,7 +9,7 @@ import org.springframework.context.annotation.PropertySource;
 @Configuration
 @Data
 @PropertySource("application.properties")
-public class AnecdoteController {
+public class AnecdoteConfig {
 
     @Value("${bot.name}")
     String botName;

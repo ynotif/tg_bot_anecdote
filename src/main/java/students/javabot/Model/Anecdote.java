@@ -8,7 +8,6 @@ import java.util.Date;
 @NoArgsConstructor
 @Getter
 @Setter
-@ToString
 @Entity(name = "anecdote")
 @Table(name = "anecdote")
 public class Anecdote {
