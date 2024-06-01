@@ -21,7 +21,7 @@ public class SpringSecurityConfiguration {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(expressionInterceptUrlRegistry -> expressionInterceptUrlRegistry.requestMatchers("/registration", "/login").permitAll() // Доступно всем
-                        .requestMatchers(HttpMethod.GET, "/anecdote").hasAuthority(UserAuthority.USER.getAuthority())
+                        .requestMatchers(HttpMethod.GET, "/anecdote/**").authenticated()
                         .anyRequest().hasAuthority(UserAuthority.ADMIN.getAuthority()))
                 .formLogin(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable);

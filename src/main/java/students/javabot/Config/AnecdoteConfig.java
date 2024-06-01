@@ -12,11 +12,10 @@ import org.springframework.context.annotation.PropertySource;
 public class AnecdoteConfig {
 
     @Value("${bot.name}")
-    String botName;
+    private String botName;
 
     @Value("${bot.token}")
-    String token;
-
+    private String token;
 
 }
 
